@@ -16,6 +16,7 @@ use stremio_core::{
     constants::PROFILE_STORAGE_KEY,
     models::{ctx::Ctx, streaming_server::StreamingServer},
     runtime::{Env, EnvError, EnvFuture, TryEnvFuture},
+    types::remote_config::ClientInfo,
 };
 
 mod http_cache;
@@ -660,6 +661,14 @@ impl Env for DesktopEnv {
 
     fn flush_analytics() -> EnvFuture<'static, ()> {
         future::ready(()).boxed()
+    }
+
+    fn client_info() -> ClientInfo {
+        ClientInfo {
+            platform: "desktop".to_owned(),
+            os: Some(std::env::consts::OS.to_owned()),
+            ..ClientInfo::default()
+        }
     }
 
     fn analytics_context(

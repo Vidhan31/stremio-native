@@ -6,7 +6,7 @@
 [![Clippy](https://github.com/stremio-native/stremio-native/actions/workflows/clippy.yml/badge.svg)](https://github.com/stremio-native/stremio-native/actions/workflows/clippy.yml)
 [![Latest Release](https://img.shields.io/github/v/release/stremio-native/stremio-native?color=7c3aed&label=release)](https://github.com/stremio-native/stremio-native/releases)
 ![Rust](https://img.shields.io/badge/rust-2024_stable-orange.svg?logo=rust)
-![Slint UI](https://img.shields.io/badge/UI-Slint_1.17-blue.svg?logo=slint)
+![Slint UI](https://img.shields.io/badge/UI-Slint_1.19-blue.svg?logo=slint)
 ![License](https://img.shields.io/github/license/stremio-native/stremio-native?color=informational)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux-lightgrey)
 
@@ -70,7 +70,6 @@ Measured on Windows x64 from the settled, idle v1.0.0 release process. CPU and I
 
 ### 🎨 Native Desktop UI & Customization
 * **Slint UI & Custom Themes** — native desktop rendering with Side Rail, Top Bar, Minimal, and Classic theme presets.
-* **Browser-Style Smooth Scrolling** — tuned scroll physics (100px wheel step, cubic ease-out, 1200px/s² fling) across all list views.
 * **Picture-in-Picture (PiP)** — compact always-on-top window mode with integrated player controls.
 * **Multi-Profile Management** — Owner, Standard, and Kids profiles with Argon2id PIN protection and live profile switching.
 * **Remappable Hotkeys** — typed Winit hotkey editor with modifier support, hold/release actions, and conflict detection.

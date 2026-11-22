@@ -1,9 +1,6 @@
 use std::{collections::HashMap, str::FromStr, sync::Mutex, time::Duration};
 
-use argon2::{
-    Argon2, PasswordHash, PasswordHasher, PasswordVerifier,
-    password_hash::{SaltString, rand_core::OsRng},
-};
+use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
@@ -398,9 +395,8 @@ pub async fn authorize_owner_pin(
 
 pub async fn set_pin(profile_id: &ProfileId, pin: &str) -> Result<(), ProfileError> {
     validate_pin(pin)?;
-    let salt = SaltString::generate(&mut OsRng);
     let hash = Argon2::default()
-        .hash_password(pin.as_bytes(), &salt)
+        .hash_password(pin.as_bytes())
         .map_err(|_| ProfileError::InvalidPin)?
         .to_string();
     let conn = crate::db::get_conn()

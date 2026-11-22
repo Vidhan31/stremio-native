@@ -11,7 +11,7 @@ export struct ColorStop {
     color: color,
 }
 
-// Slint 1.17 has no way to grow an array from the language, so the gradient
+// Slint has no way to grow an array from the language, so the gradient
 // keeps a fixed pool of slots and tracks how many are live. Five is the widest
 // the stop list stays readable at the panel's width.
 export global GradientLimits {

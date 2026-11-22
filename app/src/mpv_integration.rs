@@ -936,7 +936,7 @@ fn embedded_chapter_skip(state: &PlaybackState) -> Option<(SkipButtonState, f64)
 }
 
 struct StatisticsPoll {
-    key: (String, u16),
+    key: (String, Option<u16>),
     cancellation: CancellationToken,
 }
 
@@ -2221,6 +2221,7 @@ impl NativePlaybackBridge {
                             device: device.to_string(),
                             source,
                             time,
+                            subtitles: None,
                         },
                     )),
                 });
@@ -2772,7 +2773,7 @@ impl NativePlaybackBridge {
             };
             Some(StatisticsRequest {
                 info_hash: info_hash.iter().map(|byte| format!("{byte:02x}")).collect(),
-                file_idx: file_idx.unwrap_or_default(),
+                file_idx: *file_idx,
             })
         });
         let Some(request) = request else {

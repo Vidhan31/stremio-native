@@ -1,7 +1,7 @@
 // Copyright © SixtyFPS GmbH <info@slint.dev>
 // SPDX-License-Identifier: GPL-3.0-only OR LicenseRef-Slint-Royalty-free-2.0 OR LicenseRef-Slint-Software-3.0
 
-// cSpell: ignore fboid
+// cSpell: ignore fboid multisampled renderbuffer Veri
 use std::num::NonZeroU32;
 use std::{cell::RefCell, sync::Arc};
 
@@ -65,6 +65,7 @@ impl super::Surface for OpenGLSurface {
         display_handle: Arc<dyn raw_window_handle::HasDisplayHandle + Send + Sync>,
         size: PhysicalWindowSize,
         requested_graphics_api: Option<RequestedGraphicsAPI>,
+        _transparent: bool,
     ) -> Result<Self, PlatformError> {
         Self::new_with_config(
             window_handle,
@@ -106,7 +107,7 @@ impl super::Surface for OpenGLSurface {
             &skia_safe::Canvas,
             Option<&mut skia_safe::gpu::DirectContext>,
             u8,
-        ) -> Option<DirtyRegion>,
+        ) -> Result<Option<DirtyRegion>, PlatformError>,
         pre_present_callback: &RefCell<Option<Box<dyn FnMut()>>>,
     ) -> Result<DrawOutcome, PlatformError> {
         self.ensure_context_current()?;
@@ -135,12 +136,13 @@ impl super::Surface for OpenGLSurface {
         let skia_canvas = surface.canvas();
 
         skia_canvas.save();
-        callback(
+        let result = callback(
             skia_canvas,
             Some(gr_context),
             u8::try_from(self.glutin_surface.buffer_age()).unwrap_or_default(),
         );
         skia_canvas.restore();
+        result?;
 
         if let Some(pre_present_callback) = pre_present_callback.borrow_mut().as_mut() {
             pre_present_callback();
@@ -221,8 +223,14 @@ impl super::Surface for OpenGLSurface {
                 },
                 skia_safe::ColorType::RGBA8888,
                 skia_safe::AlphaType::Unpremul,
-                None,
+                crate::sampled_texture_color_space(crate::TextureEncoding::Unorm),
             )
+        }
+    }
+
+    fn free_gpu_resources(&self) {
+        if self.ensure_context_current().is_ok() {
+            self.gr_context.borrow_mut().free_gpu_resources();
         }
     }
 }
@@ -268,14 +276,15 @@ impl OpenGLSurface {
 
         glutin_surface.resize(&current_glutin_context, width, height);
 
+        let gl = unsafe {
+            glow::Context::from_loader_function_cstr(|name| {
+                current_glutin_context.display().get_proc_address(name) as *const _
+            })
+        };
+
         let fb_info = {
             use glow::HasContext;
 
-            let gl = unsafe {
-                glow::Context::from_loader_function_cstr(|name| {
-                    current_glutin_context.display().get_proc_address(name) as *const _
-                })
-            };
             let fboid = unsafe { gl.get_parameter_i32(glow::FRAMEBUFFER_BINDING) };
 
             skia_safe::gpu::gl::FramebufferInfo {
@@ -295,8 +304,12 @@ impl OpenGLSurface {
             "Skia Renderer: Internal Error: Could not create OpenGL Interface".to_string()
         })?;
 
+        let mut options = skia_safe::gpu::ContextOptions::new();
+        if resolves_multisampled_r8_on_cpu(&gl) {
+            options.internal_multisample_count = 0;
+        }
         let mut gr_context =
-            skia_safe::gpu::direct_contexts::make_gl(gl_interface, None).ok_or_else(|| {
+            skia_safe::gpu::direct_contexts::make_gl(gl_interface, Some(&options)).ok_or_else(|| {
                 "Skia Renderer: Internal Error: Could not create Skia Direct Context from GL interface".to_string()
             })?;
 
@@ -342,12 +355,14 @@ impl OpenGLSurface {
         ),
         PlatformError,
     > {
-        cfg_if::cfg_if! {
-            if #[cfg(target_os = "macos")] {
+        core::cfg_select! {
+            target_os = "macos" => {
                 let display_api_preference = glutin::display::DisplayApiPreference::Cgl;
-            } else if #[cfg(not(target_family = "windows"))] {
+            }
+            not(target_family = "windows") => {
                 let display_api_preference = glutin::display::DisplayApiPreference::Egl;
-            } else {
+            }
+            _ => {
                 let display_api_preference = glutin::display::DisplayApiPreference::EglThenWgl(Some(_window_handle.as_raw()));
             }
         }
@@ -407,8 +422,7 @@ impl OpenGLSurface {
         let preferred_context_attributes = match requested_opengl_version {
             // glutin maps OpenGL(None) to exactly 3.3 instead of asking the
             // driver for its newest context. Try standardized desktop GL
-            // versions in descending order so Slint's unversioned request has
-            // the intended "highest available" behavior.
+            // versions in descending order for the unversioned request.
             RequestedOpenGLVersion::OpenGL(None) => [
                 (4, 6),
                 (4, 5),
@@ -433,16 +447,14 @@ impl OpenGLSurface {
                     .build(Some(_window_handle.as_raw()))
             })
             .collect::<Vec<_>>(),
-            RequestedOpenGLVersion::OpenGL(Some((major, minor))) => {
-                vec![
-                    ContextAttributesBuilder::new()
-                        .with_context_api(ContextApi::OpenGl(Some(glutin::context::Version {
-                            major,
-                            minor,
-                        })))
-                        .build(Some(_window_handle.as_raw())),
-                ]
-            }
+            RequestedOpenGLVersion::OpenGL(Some((major, minor))) => vec![
+                ContextAttributesBuilder::new()
+                    .with_context_api(ContextApi::OpenGl(Some(glutin::context::Version {
+                        major,
+                        minor,
+                    })))
+                    .build(Some(_window_handle.as_raw())),
+            ],
             RequestedOpenGLVersion::OpenGLES(version) => {
                 let version =
                     version.map(|(major, minor)| glutin::context::Version { major, minor });
@@ -466,15 +478,15 @@ impl OpenGLSurface {
             ContextAttributesBuilder::new().build(Some(_window_handle.as_raw()));
 
         let preferred_gl_context = preferred_context_attributes.iter().find_map(|attributes| {
-            // SAFETY: The attributes use this window's live raw handle and the
-            // configuration was obtained from the same GL display.
+            // SAFETY: The attributes refer to this live window and the config
+            // came from the same GL display.
             unsafe { gl_display.create_context(&config, attributes).ok() }
         });
         let not_current_gl_context = if let Some(context) = preferred_gl_context {
             context
         } else {
             // SAFETY: Both fallback attribute sets refer to the same live
-            // window handle and GL display configuration as above.
+            // window and GL display configuration as above.
             unsafe {
                 gl_display
                     .create_context(&config, &gles2_fallback_context_attributes)
@@ -558,7 +570,7 @@ impl OpenGLSurface {
             &backend_render_target,
             skia_safe::gpu::SurfaceOrigin::BottomLeft,
             skia_safe::ColorType::RGBA8888,
-            None,
+            crate::attachment_color_space(crate::TextureEncoding::Unorm),
             None,
         ) {
             Some(surface) => Ok(surface),
@@ -592,4 +604,22 @@ impl Drop for OpenGLSurface {
             self.gr_context.borrow_mut().abandon();
         }
     }
+}
+
+/// NXP's i.MX8 GL drivers resolve a multisampled GL_R8 renderbuffer on the CPU,
+/// which takes about 150 ms at 512x1024.
+/// Skia's atlas for anti-aliased paths is such a renderbuffer, resolved every frame,
+/// unless it's a GLES context with a multisampled-render-to-texture extension.
+fn resolves_multisampled_r8_on_cpu(gl: &glow::Context) -> bool {
+    use glow::HasContext;
+
+    let vendor = unsafe { gl.get_parameter_string(glow::VENDOR) };
+    if !vendor.contains("Vivante") && !vendor.contains("VeriSilicon") {
+        return false;
+    }
+    let extensions = gl.supported_extensions();
+    let renders_to_texture = gl.version().is_embedded
+        && (extensions.contains("GL_EXT_multisampled_render_to_texture")
+            || extensions.contains("GL_IMG_multisampled_render_to_texture"));
+    !renders_to_texture
 }

@@ -21,10 +21,7 @@ pub struct FontCache {
 
 impl Default for FontCache {
     fn default() -> Self {
-        Self {
-            font_mgr: skia_safe::FontMgr::new(),
-            fonts: CLruCache::new(FONT_CACHE_CAPACITY),
-        }
+        Self { font_mgr: skia_safe::FontMgr::new(), fonts: CLruCache::new(FONT_CACHE_CAPACITY) }
     }
 }
 
@@ -68,9 +65,8 @@ impl FontCache {
                             }
                         })
                         .collect();
-                let position = skia_safe::font_arguments::VariationPosition {
-                    coordinates: &coords,
-                };
+                let position =
+                    skia_safe::font_arguments::VariationPosition { coordinates: &coords };
                 let args = skia_safe::FontArguments::new().set_variation_design_position(position);
                 base.clone_with_arguments(&args).or(Some(base))
             });
@@ -82,12 +78,8 @@ impl FontCache {
 
     fn load_typeface_internal(&self, font: &parley::FontData) -> Option<skia_safe::Typeface> {
         let typeface = self.font_mgr.new_from_data(
-            font.data.as_ref(),
-            if font.index > 0 {
-                Some(font.index as _)
-            } else {
-                None
-            },
+            skia_safe::Data::new_with_owner(font.data.clone()),
+            if font.index > 0 { Some(font.index as _) } else { None },
         );
 
         // Due to  https://issues.skia.org/issues/310510989, fonts from true type collections
@@ -99,12 +91,10 @@ impl FontCache {
             && let Some(typeface) = read_fonts::CollectionRef::new(font.data.as_ref())
                 .ok()
                 .and_then(|ttc| ttc.get(font.index).ok())
-                .map(|ttf| {
-                    write_fonts::FontBuilder::new()
-                        .copy_missing_tables(ttf)
-                        .build()
+                .map(|ttf| write_fonts::FontBuilder::new().copy_missing_tables(ttf).build())
+                .and_then(|new_ttf| {
+                    self.font_mgr.new_from_data(skia_safe::Data::new_with_owner(new_ttf), None)
                 })
-                .and_then(|new_ttf| self.font_mgr.new_from_data(&new_ttf, None))
         {
             return Some(typeface);
         }

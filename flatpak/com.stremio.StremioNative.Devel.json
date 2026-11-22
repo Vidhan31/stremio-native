@@ -1,19 +1,19 @@
 {
     "app-id": "com.stremio.StremioNative.Devel",
-    "runtime": "org.gnome.Platform",
-    "runtime-version": "50",
-    "sdk": "org.gnome.Sdk",
+    "runtime": "org.freedesktop.Platform",
+    "runtime-version": "26.08",
+    "sdk": "org.freedesktop.Sdk",
     "sdk-extensions": [
         "org.freedesktop.Sdk.Extension.rust-stable"
     ],
     "add-extensions": {
         "org.freedesktop.Platform.codecs-extra": {
-            "version": "25.08-extra",
+            "version": "26.08-extra",
             "directory": "lib/codecs-extra",
             "add-ld-path": "."
         },
         "org.freedesktop.Platform.VAAPI.Intel": {
-            "version": "25.08",
+            "version": "26.08",
             "directory": "lib/intel-vaapi-driver",
             "add-ld-path": ".",
             "download-if": "have-intel-gpu",

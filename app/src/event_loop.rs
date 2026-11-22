@@ -583,7 +583,8 @@ pub fn start_event_loop(
                                 format_rate(statistics.download_speed),
                                 format_rate(statistics.upload_speed),
                                 i32::try_from(statistics.peers).unwrap_or(i32::MAX),
-                                (statistics.stream_progress * 100.0).clamp(0.0, 100.0) as f32,
+                                (statistics.stream_progress.unwrap_or_default() * 100.0)
+                                    .clamp(0.0, 100.0) as f32,
                             )),
                             _ => None,
                         });

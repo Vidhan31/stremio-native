@@ -249,7 +249,7 @@ impl Updater {
         match result {
             Ok(Some(update)) => {
                 tracing::info!(
-                    version = %update.release.version,
+                    version = %update.release.version(),
                     can_install = update.can_install,
                     "GitHub application update is available"
                 );
@@ -257,7 +257,7 @@ impl Updater {
                 project_settings(
                     views.clone(),
                     SettingsUpdateState::Available,
-                    display_version(&update.release.version),
+                    display_version(update.release.version()),
                     SettingsUpdateAction::ViewUpdate,
                     true,
                 );
@@ -299,7 +299,7 @@ impl Updater {
         };
 
         if !update.can_install {
-            let version = update.release.version.clone();
+            let version = update.release.version().to_owned();
             let result = tokio::task::spawn_blocking(move || {
                 open::that(release_page_url(&version))
                     .context("failed to open the GitHub release page")
@@ -316,8 +316,8 @@ impl Updater {
             return;
         }
 
-        project_installing(views.clone(), &update.release.version);
-        let version = update.release.version.clone();
+        project_installing(views.clone(), update.release.version());
+        let version = update.release.version().to_owned();
         let result = tokio::task::spawn_blocking(move || stage_installer(&version))
             .await
             .context("updater task failed")
@@ -327,7 +327,7 @@ impl Updater {
         match result {
             Ok(()) => {
                 tracing::info!(
-                    version = %update.release.version,
+                    version = %update.release.version(),
                     "application installer staged; shutting down before launch"
                 );
                 let _ = slint::invoke_from_event_loop(|| {
@@ -366,12 +366,12 @@ fn latest_stable_release(
     releases
         .into_iter()
         .filter(|release| {
-            is_stable(&release.version)
-                && self_update::version::bump_is_greater(current_version, &release.version)
+            is_stable(release.version())
+                && self_update::version::bump_is_greater(current_version, release.version())
                     .unwrap_or(false)
         })
         .reduce(|latest, candidate| {
-            if self_update::version::bump_is_greater(&latest.version, &candidate.version)
+            if self_update::version::bump_is_greater(latest.version(), candidate.version())
                 .unwrap_or(false)
             {
                 candidate
@@ -478,8 +478,7 @@ fn release_page_url(version: &str) -> String {
 
 fn release_notes_text(release: &Release) -> String {
     let notes = release
-        .body
-        .as_deref()
+        .body()
         .map(str::trim)
         .filter(|notes| !notes.is_empty())
         .unwrap_or("This update includes fixes and improvements.");
@@ -526,7 +525,7 @@ fn project_settings(
 }
 
 fn project_available_update(views: UpdateViews, update: AvailableUpdate) {
-    let version = display_version(&update.release.version).to_owned();
+    let version = display_version(update.release.version()).to_owned();
     let notes = release_notes(&update.release);
     let can_install = update.can_install;
     let _ = slint::invoke_from_event_loop(move || {
@@ -596,13 +595,15 @@ mod tests {
     fn latest_stable_release_is_selected_independently_of_api_order() {
         let releases = ["1.1.0", "1.3.0-beta.1", "1.2.0"]
             .into_iter()
-            .map(|version| Release {
-                version: version.to_owned(),
-                ..Release::default()
+            .map(|version| {
+                Release::builder()
+                    .version(version)
+                    .build()
+                    .expect("test release has a valid version")
             });
 
         let release = latest_stable_release(releases, "1.0.0").expect("new release");
-        assert_eq!(release.version, "1.2.0");
+        assert_eq!(release.version(), "1.2.0");
     }
 
     #[test]

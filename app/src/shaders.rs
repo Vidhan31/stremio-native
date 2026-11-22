@@ -679,7 +679,10 @@ pub async fn download_shaders_if_needed(config_dir: &Path) -> Result<()> {
                 Err(_) => continue,
             };
 
-            let name = file.name().to_string();
+            let Ok(name) = file.name() else {
+                continue;
+            };
+            let name = name.to_string();
             if name.contains("__MACOSX") {
                 continue;
             }

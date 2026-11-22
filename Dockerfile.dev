@@ -1,0 +1,45 @@
+FROM fedora:44
+
+ARG DEV_UID=1000
+ARG DEV_GID=1000
+
+RUN mkdir -p /etc/dnf/libdnf5.conf.d \
+    && printf '[main]\nfastestmirror=True\nmax_parallel_downloads=10\nmax_downloads_per_mirror=10\n' \
+        > /etc/dnf/libdnf5.conf.d/90-parallel-downloads.conf \
+    && dnf install -y \
+        autoconf automake clang clang-devel cmake curl gcc gcc-c++ git \
+        libxkbcommon-devel mpv-devel \
+        mesa-libEGL-devel mesa-libGL-devel ninja-build openssl-devel \
+        pkgconf-pkg-config python3 shadow-utils tar unzip zip \
+        fontconfig-devel freetype-devel wayland-devel \
+    && dnf clean all \
+    && groupadd --gid "${DEV_GID}" dev \
+    && useradd --uid "${DEV_UID}" --gid "${DEV_GID}" --create-home dev \
+    && mkdir -p /home/dev/.cargo/registry /home/dev/.cargo/git /home/dev/vcpkg \
+    && chown -R dev:dev /home/dev
+
+USER dev
+ENV HOME=/home/dev
+ENV CARGO_HOME=/home/dev/.cargo
+ENV RUSTUP_HOME=/home/dev/.rustup
+ENV VCPKG_ROOT=/home/dev/vcpkg
+ENV PATH=/home/dev/.cargo/bin:/home/dev/vcpkg:$PATH
+
+RUN git clone https://github.com/microsoft/vcpkg.git "${VCPKG_ROOT}" \
+    && git -C "${VCPKG_ROOT}" checkout 84bab45d415d22042bd0b9081aea57f362da3f35 \
+    && "${VCPKG_ROOT}/bootstrap-vcpkg.sh" -disableMetrics \
+    && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
+        | sh -s -- -y --profile minimal --default-toolchain stable \
+            --component clippy --component rustfmt
+
+RUN rustup default stable
+
+USER root
+RUN dnf install -y kernel-headers perl-IPC-Cmd perl-FindBin perl-Time-Piece && dnf clean all
+USER dev
+USER root
+RUN mkdir -p /home/dev/.cargo/target && chown dev:dev /home/dev/.cargo/target
+USER dev
+
+WORKDIR /work/stremio-native
+CMD ["bash"]
