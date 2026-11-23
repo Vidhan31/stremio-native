@@ -3,6 +3,7 @@
 - Rewrite of Stremio UI and server in Rust for native performance.
 - Do not add dependencies unless the user explicitly gives permission.
 - Sibling checkouts: `~/Projects/stremio-core`. Consult before changing integrations.
+  - `Stremio/stremio-core` is the open-source Rust core engine behind Stremio. It contains the shared logic used by Stremio apps, including addon communication, catalogs, library and profile state, notifications, playback state, deep links, and streaming models. The user interfaces are separate; `stremio-core` is the domain layer.
 - Server subsystem is split into modular crates:
   - `server/`: HTTP server, Axum routes, local addon indexing, and casting.
   - `enginefs/`: Torrent streaming engine, libtorrent alerts, piece caching, and transcoding.
