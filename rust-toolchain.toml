@@ -1,6 +1,4 @@
 [toolchain]
-# Use the current stable toolchain. The workspace no longer needs nightly-only
-# compiler flags after removing frontend thread tuning.
-channel = "stable"
+channel = "1.100.0"
 profile = "minimal"
 components = ["clippy", "rustfmt"]

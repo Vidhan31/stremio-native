@@ -12,6 +12,10 @@ members = [
 ]
 exclude = ["vendor/i-slint-renderer-skia"]
 
+[workspace.package]
+rust-version = "1.95"
+edition = "2024"
+
 [workspace.dependencies]
 anyhow = "1.0.104"
 argon2 = "0.6.0"

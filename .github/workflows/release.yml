@@ -22,7 +22,6 @@ jobs:
           submodules: recursive
       - uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: nightly-2026-07-31
           targets: x86_64-pc-windows-msvc
       - name: Provide libclang for autocxx bindings
         shell: pwsh
@@ -129,8 +128,13 @@ jobs:
           path: vcpkg_installed
           key: Windows-vcpkg-x86-64-v3-static-md-release-v1-${{ hashFiles('vcpkg.json', 'triplets/**', 'vcpkg-overlays/**') }}
       - uses: Swatinem/rust-cache@v2
+      - name: Configure reproducible build environment
+        shell: pwsh
+        run: echo "SOURCE_DATE_EPOCH=$(git log -1 --format=%ct)" >> $env:GITHUB_ENV
       - name: Build release
-        run: cargo build --locked --release --package stremio-native
+        shell: pwsh
+        run: |
+          cargo build --locked --release --package stremio-native --config 'target."cfg(all(target_arch = \"x86_64\", windows, target_env = \"msvc\"))".rustflags=["-C", "target-cpu=x86-64-v3", "-C", "linker=rust-lld", "-C", "link-arg=/FORCE:MULTIPLE", "-C", "link-arg=/IGNORE:4006", "-C", "link-arg=/PDBPAGESIZE:16384", "-C", "link-arg=/STACK:8388608", "--remap-path-prefix=$($env:GITHUB_WORKSPACE)=/build"]'
         env:
           VCPKG_ROOT: ${{ github.workspace }}/vcpkg
           VCPKG_INSTALLED_DIR: ${{ github.workspace }}/vcpkg_installed
@@ -209,8 +213,6 @@ jobs:
         with:
           submodules: recursive
       - uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: nightly-2026-07-31
       - uses: Swatinem/rust-cache@v2
       - name: Restore apt cache
         id: apt-cache
@@ -249,8 +251,10 @@ jobs:
         with:
           path: vcpkg_installed
           key: Linux-vcpkg-x64-linux-v3-static-release-v1-${{ hashFiles('vcpkg.json', 'triplets/**', 'vcpkg-overlays/**') }}
+      - name: Configure reproducible build environment
+        run: echo "SOURCE_DATE_EPOCH=$(git log -1 --format=%ct)" >> $GITHUB_ENV
       - name: Build release
-        run: cargo build --locked --release --package stremio-native
+        run: cargo build --locked --release --package stremio-native --config 'target."cfg(all(target_arch = \"x86_64\", target_os = \"linux\"))".rustflags=["-C", "target-cpu=x86-64-v3", "--remap-path-prefix=${{ github.workspace }}=/build"]'
       - name: Install cargo-deb
         uses: taiki-e/install-action@v2.85.4
         with:

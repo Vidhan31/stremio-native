@@ -2,7 +2,8 @@
 name = "stremio-native"
 version = "1.0.6"
 authors = ["perpetus <perpetus.github@gmail.com>"]
-edition = "2024"
+edition.workspace = true
+rust-version.workspace = true
 license = "GPL-3.0-only"
 
 [dependencies]
