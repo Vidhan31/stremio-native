@@ -3,6 +3,10 @@
 - Rewrite of Stremio UI and server in Rust for native performance.
 - Do not add dependencies unless the user explicitly gives permission.
 - Sibling checkouts: `~/Projects/stremio-core`. Consult before changing integrations.
+- Server subsystem is split into modular crates:
+  - `server/`: HTTP server, Axum routes, local addon indexing, and casting.
+  - `enginefs/`: Torrent streaming engine, libtorrent alerts, piece caching, and transcoding.
+  - `bindings/`: Native C++ FFI bridges (`libtorrent-sys`, `async-rar`, `async-sevenz`).
 
 # Upstream reference
 
