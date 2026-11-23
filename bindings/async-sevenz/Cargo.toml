@@ -1,0 +1,20 @@
+[package]
+name = "async-sevenz"
+version = "0.1.8"
+edition = "2021"
+rust-version.workspace = true
+
+[dependencies]
+autocxx = "0.31"
+cxx = "1.0"
+tokio = { workspace = true, features = ["rt", "sync", "io-util"] }
+
+[build-dependencies]
+autocxx-build = "0.31"
+cc = "1.2"
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
+
+[lints]
+workspace = true

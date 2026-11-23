@@ -1,0 +1,37 @@
+[package]
+name = "enginefs"
+version = "0.1.8"
+edition = "2024"
+rust-version.workspace = true
+
+[dependencies]
+libtorrent-sys = { path = "../bindings/libtorrent-sys", optional = true }
+tokio = { workspace = true, features = [
+    "rt-multi-thread",
+    "macros",
+    "fs",
+    "io-util",
+    "sync",
+    "process",
+    "test-util",
+] }
+tokio-util = { workspace = true, features = ["rt"], optional = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tracing = { workspace = true }
+async-trait = "0.1.92"
+bytes = { workspace = true }
+url = { workspace = true }
+regex = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+moka = { version = "0.12.16", features = ["future", "sync"] }
+reqwest = { workspace = true, features = ["json", "rustls"] }
+parking_lot = "0.13.0"
+
+[lints]
+workspace = true
+
+[features]
+default = ["libtorrent"]
+libtorrent = ["dep:libtorrent-sys", "dep:tokio-util"]
