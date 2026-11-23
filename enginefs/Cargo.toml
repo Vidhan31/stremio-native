@@ -29,8 +29,7 @@ moka = { version = "0.12.16", features = ["future", "sync"] }
 reqwest = { workspace = true, features = ["json", "rustls"] }
 parking_lot = "0.13.0"
 
-[lints]
-workspace = true
+
 
 [features]
 default = ["libtorrent"]

@@ -1,7 +1,7 @@
 [package]
 name = "async-sevenz"
 version = "0.1.8"
-edition = "2021"
+edition = "2024"
 rust-version.workspace = true
 
 [dependencies]
@@ -16,5 +16,4 @@ cc = "1.2"
 [dev-dependencies]
 tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
 
-[lints]
-workspace = true
+

@@ -44,7 +44,7 @@ pub struct RustReaderContext {
     pub tx: mpsc::UnboundedSender<(ReaderRequest, std_mpsc::Sender<ReaderResponse>)>,
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn rust_read_cb(
     ctx: *mut c_void,
     buf: *mut c_void,
@@ -71,7 +71,7 @@ pub unsafe extern "C" fn rust_read_cb(
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn rust_seek_cb(
     ctx: *mut c_void,
     offset: i64,

@@ -33,9 +33,6 @@ PARENT_CARGO_CONFIG="${PROJECTS_DIR}/.cargo/config.toml"
 if [[ ! -f "$PARENT_CARGO_CONFIG" ]]; then
     mkdir -p "${PROJECTS_DIR}/.cargo"
     cat << 'EOF' > "$PARENT_CARGO_CONFIG"
-[patch."https://github.com/Vidhan31/stream-server.git"]
-server = { path = "stream-server/server" }
-
 [patch."https://github.com/Vidhan31/stremio-core.git"]
 stremio-core = { path = "stremio-core" }
 EOF

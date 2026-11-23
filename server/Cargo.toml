@@ -111,5 +111,4 @@ chrono = "0.4.42"
 [dev-dependencies]
 reqwest = { version = "0.13.5", features = ["blocking", "json"] }
 
-[lints]
-workspace = true
+

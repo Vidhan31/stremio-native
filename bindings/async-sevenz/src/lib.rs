@@ -236,7 +236,7 @@ struct RustWriterContext {
     writer: Box<dyn std::io::Write + Send>,
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 /// Writes a buffer supplied by the native 7-Zip callback into the Rust writer.
 ///
 /// # Safety

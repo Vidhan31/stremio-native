@@ -9,6 +9,11 @@ members = [
     "playback-mpv",
     "server-connector",
     "stream-ranking",
+    "enginefs",
+    "server",
+    "bindings/async-rar",
+    "bindings/libtorrent-sys",
+    "bindings/async-sevenz",
 ]
 exclude = ["vendor/i-slint-renderer-skia"]
 
@@ -23,11 +28,13 @@ async-trait = "0.1.92"
 axum = "0.8.9"
 base64 = "0.23.1"
 blake3 = "1.8.7"
+bytes = "1.12.2"
 chrono = "0.4.45"
 chacha20poly1305 = "0.11.0"
 crash-handler = "0.8.1"
 dirs = "7.0.0"
 futures = "0.3.34"
+futures-util = "0.3.34"
 fluent-bundle = "0.16.0"
 glow = "0.18.0"
 http = "1.5.0"
@@ -37,7 +44,8 @@ notify = "8.2.2"
 percent-encoding = "2.3.2"
 reqwest = { version = "0.13.5", default-features = false }
 rand = "0.10.2"
-serde = "1.0.229"
+regex = "1.13.2"
+serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.154"
 self_update = { version = "1.3.3", default-features = false, features = ["reqwest", "rustls", "archive-zip", "compression-zip-deflate", "github"] }
 zip = { version = "9.7.3", default-features = false, features = ["deflate"] }
@@ -45,7 +53,7 @@ slint = { version = "=1.19.0", default-features = false }
 # Keep the compiler aligned with the runtime and local renderer patch.
 slint-build = "=1.19.0"
 stremio-core = { git = "https://github.com/Vidhan31/stremio-core.git", rev = "7fb155ff838f1425d75b136c2373b6f70af3f108", features = ["derive", "analytics", "env-future-send"] }
-stream-server = { git = "https://github.com/Vidhan31/stream-server.git", rev = "4bdf3de220f56f0a2d6d1442df73ab0ff364f348", package = "server", default-features = false, features = ["libtorrent"] }
+stream-server = { path = "server", package = "server", default-features = false, features = ["libtorrent"] }
 sys-locale = "0.3.2"
 thiserror = "2.0.21"
 tokio = "1.54.1"
@@ -57,6 +65,7 @@ tracing-chrome = "0.7.2"
 tracing-subscriber = "0.3.23"
 url = "2.5.8"
 unic-langid = "0.9.6"
+uuid = "1.29.3"
 walkdir = "2.5.0"
 discord-rich-presence = "1.1.0"
 # Pure-Rust zbus backend so Linux builds need no system libdbus. The Windows
