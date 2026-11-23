@@ -11,6 +11,7 @@
 
 # Upstream reference
 
+- The server subsystem is a reverse-engineered Rust rewrite of Stremio's closed-source `server.js`.
 - Reference bundle is at `research/server.js` (6.5 MB). Do not read whole. Search with `rg` and read targeted line ranges.
 - Legacy protocols from `server.js` (FTP and NZB/Usenet) are discarded and out of scope.
 
